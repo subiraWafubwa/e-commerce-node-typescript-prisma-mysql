@@ -3,7 +3,7 @@ import { prismaClient } from "..";
 import { hashSync, compareSync } from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../secrets";
-import { ErrorCode, HttpException } from "../exceptions/HttpException";
+import { ErrorCode } from "../exceptions/HttpException";
 import { BadRequestException } from "../exceptions/BadRequestException";
 import { SignUpSchema } from "../schema/users";
 import { UnprocessableEntityException } from "../exceptions/UnprocessableEntityException";
@@ -17,14 +17,15 @@ export const signup = async (req: Request, res: Response) => {
   if (!isValid.success) {
     throw new UnprocessableEntityException(
       "Unprocessable Entity",
-      isValid.error.format(),
-      ErrorCode.UNPROCESSABLE_ENTITY
+      ErrorCode.UNPROCESSABLE_ENTITY,
+      isValid.error.format()
     );
   }
 
   const { name, email, password } = req.body;
 
   let user = await prismaClient.user.findFirst({ where: { email: email } });
+
   if (user) {
     throw new BadRequestException(
       "User already exists",
@@ -49,17 +50,12 @@ export const login = async (req: Request, res: Response) => {
   let user = await prismaClient.user.findFirst({ where: { email: email } });
 
   if (!user) {
-    throw new NotFoundException(
-      "User not found!",
-      error,
-      ErrorCode.USER_NOT_FOUND
-    );
+    throw new NotFoundException("User not found!", ErrorCode.USER_NOT_FOUND);
   }
 
   if (!compareSync(password, user.password)) {
     throw new UnauthorizedException(
       "Incorrect password",
-      error,
       ErrorCode.INCORRECT_PASSWORD
     );
   }
